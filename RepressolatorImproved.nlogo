@@ -1,4 +1,5 @@
-globals [  wait-length min-patch-size max-horiz-space tf-ycor signal-tf-gene-id
+globals [  wait-length min-patch-size max-horiz-space  signal-tf-gene-id
+  n-go-steps tf-ycor tf-size
   start-pcolor pcolor-increment tf-color-adjustment
   signal-off-color signal-on-color signal-shape signal-size]
 breed [ tfs tf ]
@@ -8,6 +9,8 @@ patches-own [ dna-gene-id dna-inhibited-by-gene-id]
 
 to setup
   clear-all
+
+  set n-go-steps 4
   ;; use global variables for easier customization
   set wait-length 0
 
@@ -18,7 +21,8 @@ to setup
   set pcolor-increment 10
   set tf-color-adjustment .5
 
-  set tf-ycor 0
+  set tf-size .5
+  set tf-ycor .25
 
   set signal-off-color black
   set signal-on-color yellow
@@ -71,12 +75,12 @@ to-report get-signal-tf-count
   report count tfs with [ tf-gene-id = signal-tf-gene-id ]
 end
 
-to update-signal-color2
- ; ask signals [set color  (ifelse signal-on?  [signal-on-color] [signal-off-color]) ]
+to update-signal-color
+ ask signals [set color  (ifelse-value signal-on?  [signal-on-color] [signal-off-color]) ]
 end
 
 
-to update-signal-color
+to update-signal-color3
   let signal-color signal-off-color
   if signal-on?  [set signal-color signal-on-color]
   ask signals [ set color signal-color ]
@@ -89,12 +93,13 @@ to-report compute-signal-dx
   report .5 - .5 * signal-size
 end
 
-;; gene-id dna-inhibited-by-gene-id
 to go
+  ;; Each tf action happens every third tick
+
   ;; Each patch will produce transcription factors if the tf that inhibits it
   ;; is not on its patch
   ;; In the simple model, each patch produces one tf per tick
-  produce-tfs
+  if (ticks mod n-go-steps = 0) [ produce-tfs ]
 
   ;; Setting a non-zero wait-length can help visualize the steps that take
   ;; place during a tick
@@ -103,15 +108,16 @@ to go
   ;; tfs can degrade
   ;; In the simple model, when a dna-gene is inhibited, one of the inhibiting
   ;; tfs will degrade (die)
-  degrade-tfs
-  update-signal-color
+  if (ticks mod n-go-steps = 1) [ degrade-tfs ]
+
+  if (ticks mod n-go-steps = 2) [ update-signal-color ]
   wait wait-length
 
   ;; tfs can move
   ;; In the simple model, a tf that is in an inhibiting position stays in place
   ;; Other tfs move to the "right." This puts them in an inhibiting position during
   ;; their second tick of life
-  move-tfs
+  if (ticks mod n-go-steps = 3) [ move-tfs ]
   wait wait-length
 
   ;; tf age is not currently used
@@ -162,11 +168,17 @@ end
 ;; they have a tf-gene-id corresponding to the parent patch
 ;; they know which dna-gene they inhibit
 to init-tf [ l-gene-id l-tf-xcor]
-    set heading 90
-    setxy l-tf-xcor tf-ycor
-    set color tf-color l-gene-id
-    set tf-gene-id l-gene-id
-    set tf-inhibits-gene-id get-dna-tf-inhibits l-gene-id
+  set heading 90
+  set size tf-size
+  set l-tf-xcor (l-tf-xcor + get-tf-horiz-offset l-gene-id)
+  setxy l-tf-xcor tf-ycor
+  set color tf-color l-gene-id
+  set tf-gene-id l-gene-id
+  set tf-inhibits-gene-id get-dna-tf-inhibits l-gene-id
+end
+
+to-report get-tf-horiz-offset [l-gene-id]
+  report (l-gene-id + 1)/(n-genes + 1) - .5
 end
 
 ;; the right-most patch contains the signal
@@ -335,10 +347,10 @@ NIL
 HORIZONTAL
 
 BUTTON
-63
-130
-144
-163
+17
+131
+98
+164
 NIL
 place-tfs
 NIL
@@ -412,6 +424,23 @@ get-signal-tf-count
 17
 1
 11
+
+BUTTON
+108
+102
+171
+135
+go
+go
+T
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
