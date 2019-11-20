@@ -1,5 +1,18 @@
+;; things to do
+;; use turtles to show ids of patches
+;; show baby turtles
+;; show turtle counts by labels
+;; random turtle movement
+;; random decay
+;; look at paper
+
+;; talk about models from the agents perspective
+
+;; make agent actions plausible
+
+
 globals [  wait-length min-patch-size max-horiz-space  signal-tf-gene-id
-  n-go-steps tf-ycor tf-size
+  n-go-steps tf-ycor tf-size tf-shape inhibiting-tf-shape
   start-pcolor pcolor-increment tf-color-adjustment
   signal-off-color signal-on-color signal-shape signal-size]
 breed [ tfs tf ]
@@ -24,11 +37,15 @@ to setup
   set tf-size .5
   set tf-ycor .25
 
+  set tf-shape "arrow"
+  set inhibiting-tf-shape "x"
+
   set signal-off-color black
   set signal-on-color yellow
   set signal-shape "target"
   set signal-size .4
   set-default-shape signals signal-shape
+  set-default-shape tfs tf-shape
 
   ;; The world consists of a horizontal line of n-genes patches
   ;; Each patch represents the dna for one gene
@@ -76,14 +93,7 @@ to-report get-signal-tf-count
 end
 
 to update-signal-color
- ask signals [set color  (ifelse-value signal-on?  [signal-on-color] [signal-off-color]) ]
-end
-
-
-to update-signal-color3
-  let signal-color signal-off-color
-  if signal-on?  [set signal-color signal-on-color]
-  ask signals [ set color signal-color ]
+  ask signals [set color  (ifelse-value signal-on?  [signal-on-color] [signal-off-color]) ]
 end
 
 to-report compute-signal-dx
@@ -151,7 +161,7 @@ end
 
 to move-tfs
   ;; tfs move to the "right" unless they are in an inhibiting position
-  ask get-non-inhibiting-tfs [ fd 1 ]
+  ask get-non-inhibiting-tfs [ fd 1 update-tf-shape]
 end
 
 ;; this is used for manual placement of new tfs
@@ -175,6 +185,7 @@ to init-tf [ l-gene-id l-tf-xcor]
   set color tf-color l-gene-id
   set tf-gene-id l-gene-id
   set tf-inhibits-gene-id get-dna-tf-inhibits l-gene-id
+ ; update-tf-shape
 end
 
 to-report get-tf-horiz-offset [l-gene-id]
@@ -190,6 +201,11 @@ end
 ;; corresponds to the dna-gene-id of the right-most patch
 to-report get-signal-tf-gene-id
   report n-genes - 1
+end
+
+to update-tf-shape
+  ;set shape (ifelse-value tf-inhibits? [ inhibiting-tf-shape ] [ tf-shape ])
+  ;set shape (ifelse-value tf-inhibits? [ "x" ] [ tf-shape ])
 end
 
 ;; the "wrap" topology is implemented by doing computations mod n-genes
@@ -247,6 +263,12 @@ end
 
 to-report get-non-inhibited-gene-dna
   report  patches with [ all? tfs-here  [ tf-doesnt-inhibit? self]]
+end
+
+;; Helper function for building agent-sets
+to-report tf-inhibits? [my-tf]
+  ;; inhibits if   gene-id inhibited by my-tf = dna-gene-id of tf's patch
+  report  [tf-inhibits-gene-id ] of my-tf = [ dna-gene-id ] of my-tf
 end
 
 ;; Helper function for building agent-sets
@@ -369,7 +391,7 @@ INPUTBOX
 64
 235
 n-tfs
-1.0
+10.0
 1
 0
 Number
@@ -391,7 +413,7 @@ INPUTBOX
 186
 235
 tf-xcor
-1.0
+0.0
 1
 0
 Number
