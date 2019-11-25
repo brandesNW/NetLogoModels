@@ -88,12 +88,14 @@ to-report signal-on?
   report get-signal-tf-count > 0
 end
 
+
 to-report get-signal-tf-count
   report count tfs with [ tf-gene-id = signal-tf-gene-id ]
 end
 
 to update-signal-color
   ask signals [set color  (ifelse-value signal-on?  [signal-on-color] [signal-off-color]) ]
+  update-plots
 end
 
 to-report compute-signal-dx
@@ -104,7 +106,7 @@ to-report compute-signal-dx
 end
 
 to go
-  ;; Each tf action happens every third tick
+  ;; Each tf action happens every n-go-steps tick
 
   ;; Each patch will produce transcription factors if the tf that inhibits it
   ;; is not on its patch
@@ -133,7 +135,7 @@ to go
   ;; tf age is not currently used
   ;; it might be used to decide on degradation, movement, or analysis
   ask tfs [set tf-age tf-age + 1]
-  tick
+  tick-advance 1
 end
 
 to produce-tfs
@@ -434,7 +436,7 @@ true
 false
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "ifelse signal-on? [ plot 1 ] [plot 0]"
+"default" 1.0 0 -16777216 true "" "ifelse signal-on? \n[ plot 1 ]\n[ plot 0]"
 
 MONITOR
 44
